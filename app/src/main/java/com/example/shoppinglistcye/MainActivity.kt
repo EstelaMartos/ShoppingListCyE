@@ -3,6 +3,9 @@ package com.example.shoppinglistcompose
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -63,7 +66,10 @@ fun PantallaListaProductos(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary),
                 title = { Text("ShoppingList") }
             )
         },
@@ -87,6 +93,16 @@ fun PantallaListaProductos(navController: NavController) {
         // Filtros
         // Contador
         // Diálogo
+        val itemsList = (0..5).toList()
+        val itemsIndexedList = listOf("A", "B", "C")
+
+        LazyColumn {
+            items(itemsList) { Text("Item is $it") }
+
+            item { Text("Single item") }
+
+            itemsIndexed(itemsIndexedList) { index, item -> Text("Item at index $index is $item") }
+        }
     }
 }
 
