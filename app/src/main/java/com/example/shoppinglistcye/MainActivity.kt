@@ -1,30 +1,17 @@
-package com.example.shoppinglistcompose
+package com.example.shoppinglistcye
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -37,16 +24,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // ---------------------
-// RUTAS DE NAVEGACIÓN
+// RUTAS
 // ---------------------
 const val PANTALLA_LISTA = "lista"
 const val PANTALLA_ANADIR = "anadir"
 
+// ---------------------
+// MODELO
+// ---------------------
 data class Producto(
     val nombre: String,
     val comprado: Boolean = false
 )
-
 
 // ---------------------
 // MAIN ACTIVITY
@@ -63,33 +52,13 @@ class MainActivity : ComponentActivity() {
 }
 
 // ---------------------
-// FUNCIÓN DE NAVEGACIÓN
+// NAVEGACIÓN (ESTADO COMPARTIDO)
 // ---------------------
 @Composable
 fun Navegacion() {
     val navController = rememberNavController()
 
-    NavHost(
-        navController = navController,
-        startDestination = PANTALLA_LISTA
-    ) {
-        composable(PANTALLA_LISTA) {
-            PantallaListaProductos(navController)
-        }
-        composable(PANTALLA_ANADIR) {
-            PantallaAnadirProducto(navController)
-        }
-    }
-}
-
-// ---------------------
-// PANTALLA PRINCIPAL
-// ---------------------
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PantallaListaProductos(navController: NavController) {
-
-    var productos = remember {
+    val productos = remember {
         mutableStateListOf(
             Producto("Leche"),
             Producto("Pan"),
@@ -97,9 +66,40 @@ fun PantallaListaProductos(navController: NavController) {
         )
     }
 
+    NavHost(
+        navController = navController,
+        startDestination = PANTALLA_LISTA
+    ) {
+        composable(PANTALLA_LISTA) {
+            PantallaListaProductos(navController, productos)
+        }
+        composable(PANTALLA_ANADIR) {
+            PantallaAnadirProducto(navController, productos)
+        }
+    }
+}
+
+// ---------------------
+// PANTALLA LISTA
+// ---------------------
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PantallaListaProductos(
+    navController: NavController,
+    productos: MutableList<Producto>
+) {
     var mostrarDialogo by remember { mutableStateOf(false) }
     var productoAEliminar by remember { mutableStateOf<Producto?>(null) }
 
+    // 0 = Todos | 1 = Pendientes | 2 = Comprados
+    var opcionSeleccionada by remember { mutableIntStateOf(0) }
+
+    val productosFiltrados = when (opcionSeleccionada) {
+        0 -> productos
+        1 -> productos.filter { !it.comprado }
+        2 -> productos.filter { it.comprado }
+        else -> productos
+    }
 
     Scaffold(
         topBar = {
@@ -115,14 +115,12 @@ fun PantallaListaProductos(navController: NavController) {
             FloatingActionButton(
                 onClick = { navController.navigate(PANTALLA_ANADIR) }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir producto")
+                Icon(Icons.Default.Add, contentDescription = "Añadir")
             }
         }
-    ) { innerPadding ->
+    ) { padding ->
 
-        Column(
-            modifier = Modifier.padding(innerPadding)
-        ) {
+        Column(modifier = Modifier.padding(padding)) {
 
             // CONTADOR
             Text(
@@ -130,14 +128,43 @@ fun PantallaListaProductos(navController: NavController) {
                 modifier = Modifier.padding(8.dp)
             )
 
+            // FILTROS
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(0, 3),
+                    selected = opcionSeleccionada == 0,
+                    onClick = { opcionSeleccionada = 0 },
+                    label = { Text("Todos") }
+                )
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(1, 3),
+                    selected = opcionSeleccionada == 1,
+                    onClick = { opcionSeleccionada = 1 },
+                    label = { Text("Pendientes") }
+                )
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(2, 3),
+                    selected = opcionSeleccionada == 2,
+                    onClick = { opcionSeleccionada = 2 },
+                    label = { Text("Comprados") }
+                )
+            }
+
             // LISTA
             LazyColumn {
-                items(productos) { producto ->
+                items(productosFiltrados) { producto ->
                     ItemProducto(
                         producto = producto,
                         onCheckedChange = { checked ->
                             val index = productos.indexOf(producto)
-                            productos[index] = producto.copy(comprado = checked)
+                            if (index != -1) {
+                                productos[index] =
+                                    producto.copy(comprado = checked)
+                            }
                         },
                         onDelete = {
                             productoAEliminar = producto
@@ -147,14 +174,14 @@ fun PantallaListaProductos(navController: NavController) {
                 }
             }
         }
+
+        // DIÁLOGO CONFIRMACIÓN
         if (mostrarDialogo && productoAEliminar != null) {
             CuadroDialogo(
                 icon = Icons.Default.Delete,
                 dialogTitle = "Eliminar producto",
                 dialogText = "¿Seguro que quieres eliminar ${productoAEliminar!!.nombre}?",
-                onDismissRequest = {
-                    mostrarDialogo = false
-                },
+                onDismissRequest = { mostrarDialogo = false },
                 onConfirmation = {
                     productos.remove(productoAEliminar)
                     mostrarDialogo = false
@@ -169,18 +196,21 @@ fun PantallaListaProductos(navController: NavController) {
 // ---------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaAnadirProducto(navController: NavController) {
+fun PantallaAnadirProducto(
+    navController: NavController,
+    productos: MutableList<Producto>
+) {
+    var texto by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
                 title = { Text("Añadir producto") },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
@@ -189,16 +219,51 @@ fun PantallaAnadirProducto(navController: NavController) {
                 }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
         ) {
-            // aquí irá el formulario
+
+            Text("Nombre del producto")
+
+            OutlinedTextField(
+                value = texto,
+                onValueChange = { texto = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = {
+                        if (texto.isNotBlank()) {
+                            productos.add(Producto(texto))
+                            navController.popBackStack()
+                        }
+                    }
+                ) {
+                    Text("Guardar")
+                }
+
+                TextButton(
+                    onClick = { navController.popBackStack() }
+                ) {
+                    Text("Cancelar")
+                }
+            }
         }
     }
 }
 
-
+// ---------------------
+// ITEM PRODUCTO
+// ---------------------
 @Composable
 fun ItemProducto(
     producto: Producto,
@@ -230,7 +295,9 @@ fun ItemProducto(
     }
 }
 
-
+// ---------------------
+// DIÁLOGO CONFIRMACIÓN
+// ---------------------
 @Composable
 fun CuadroDialogo(
     icon: ImageVector,
@@ -239,32 +306,17 @@ fun CuadroDialogo(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit
 ) {
-
     var cargando by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     AlertDialog(
-        icon = {
-            Icon(icon, contentDescription = null)
-        },
-        title = {
-            Text(text = dialogTitle)
-        },
+        icon = { Icon(icon, contentDescription = null) },
+        title = { Text(dialogTitle) },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (!cargando) {
-                    Text(
-                        text = dialogText,
-                        modifier = Modifier.height(70.dp)
-                    )
-                } else {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
+            if (cargando) {
+                CircularProgressIndicator()
+            } else {
+                Text(dialogText)
             }
         },
         onDismissRequest = onDismissRequest,
@@ -273,7 +325,7 @@ fun CuadroDialogo(
                 onClick = {
                     cargando = true
                     scope.launch {
-                        delay(1000) // 1 segundo es suficiente
+                        delay(1000)
                         onConfirmation()
                     }
                 }
@@ -288,4 +340,3 @@ fun CuadroDialogo(
         }
     )
 }
-
