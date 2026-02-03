@@ -10,6 +10,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import com.example.shoppinglistcye.R
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -36,19 +38,24 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun ShoppingListCyETheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // importante
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val moradoPalito = colorResource(id = R.color.morado_palito)
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val LightColorScheme = lightColorScheme(
+        primary = moradoPalito,   // ✔ CHECKBOX
+        secondary = moradoPalito,
+        tertiary = moradoPalito
+    )
+
+    val DarkColorScheme = darkColorScheme(
+        primary = moradoPalito,
+        secondary = moradoPalito,
+        tertiary = moradoPalito
+    )
+
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
