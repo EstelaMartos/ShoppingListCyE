@@ -68,15 +68,33 @@ fun Navegacion() {
         )
     }
 
+    var productoRecienAnadido by remember { mutableStateOf<Producto?>(null) }
+
     NavHost(
         navController = navController,
         startDestination = PANTALLA_LISTA
     ) {
         composable(PANTALLA_LISTA) {
-            PantallaListaProductos(navController, productos)
+            PantallaListaProductos(
+                navController,
+                productos,
+                productoRecienAnadido,
+                onDeshacer = {
+                    productos.remove(it)
+                    productoRecienAnadido = null
+                },
+                onSnackbarMostrada = {
+                    productoRecienAnadido = null
+                }
+            )
         }
         composable(PANTALLA_ANADIR) {
-            PantallaAnadirProducto(navController, productos)
+            PantallaAnadirProducto(
+                navController,
+                productos
+            ) {
+                productoRecienAnadido = it
+            }
         }
     }
 }
@@ -87,7 +105,10 @@ fun Navegacion() {
 @Composable
 fun PantallaListaProductos(
     navController: NavController,
-    productos: MutableList<Producto>
+    productos: MutableList<Producto>,
+    productoRecienAnadido: Producto?,
+    onDeshacer: (Producto) -> Unit,
+    onSnackbarMostrada: () -> Unit
 ) {
     val verdeApp = colorResource(id = R.color.verde)
 
@@ -104,6 +125,24 @@ fun PantallaListaProductos(
         else -> productos
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(productoRecienAnadido) {
+        if (productoRecienAnadido != null) {
+            val resultado = snackbarHostState.showSnackbar(
+                message = "Producto nuevo añadido",
+                actionLabel = "Deshacer",
+                duration = SnackbarDuration.Short
+            )
+
+            if (resultado == SnackbarResult.ActionPerformed) {
+                onDeshacer(productoRecienAnadido)
+            } else {
+                onSnackbarMostrada()
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         //meto la imagen de fondo
         Image(
@@ -116,6 +155,9 @@ fun PantallaListaProductos(
         // scaffold transparente para que se vea el fondo
         Scaffold(
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            },
             topBar = {
                 CenterAlignedTopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -224,7 +266,9 @@ fun PantallaListaProductos(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaAnadirProducto(
-    navController: NavController, productos: MutableList<Producto>
+    navController: NavController,
+    productos: MutableList<Producto>,
+    onProductoAnadido: (Producto) -> Unit
 ) {
     val verdeApp = colorResource(id = R.color.verde)
     var texto by remember { mutableStateOf("") }
@@ -294,7 +338,9 @@ fun PantallaAnadirProducto(
                     Button(
                         onClick = {
                             if (texto.isNotBlank()) {
-                                productos.add(Producto(texto))
+                                val nuevoProducto = Producto(texto)
+                                productos.add(nuevoProducto)
+                                onProductoAnadido(nuevoProducto)
                                 navController.popBackStack()
                             }
                         },
@@ -350,7 +396,6 @@ fun ItemProducto(
                 checked = producto.comprado,
                 onCheckedChange = onCheckedChange,
             )
-
 
             // nombre del producto
             Text(
