@@ -14,6 +14,7 @@ El usuario puede añadir productos, marcarlos como comprados, eliminarlos y filt
 - Gestionar correctamente el estado y la recomposición.
 - Implementar navegación entre pantallas.
 - Crear una aplicación funcional y bien estructurada.
+- Proporcionar feedback visual al usuario mediante componentes de interfaz.
 
 ---
 
@@ -30,6 +31,7 @@ La aplicación cumple todos los requisitos de la opción **ShoppingList – List
   - Comprados.
 - Contador de productos pendientes visible en pantalla.
 - Diálogo de confirmación antes de eliminar un producto.
+- Visualización de una **Snackbar** al añadir un producto, con opción de **deshacer** la acción.
 
 ---
 
@@ -46,6 +48,7 @@ Incluye:
 - **FloatingActionButton** para añadir nuevos productos.
 - Botones segmentados para filtrar la lista.
 - Contador de productos pendientes.
+- **Snackbar** informativa tras añadir un producto.
 
 ### 2 Pantalla de añadir producto:
 Incluye:
@@ -54,7 +57,7 @@ Incluye:
 - Botón **Cancelar**.
 - Al guardar:
   - Se añade el producto a la lista.
-  - Se vuelve a la pantalla principal.
+  - Se vuelve a la pantalla principal, donde se muestra la Snackbar de confirmación.
 
 ---
 
@@ -63,9 +66,9 @@ Incluye:
 ### Jetpack Compose:
 - Uso exclusivo de **Jetpack Compose** (sin XML para interfaces).
 - Uso de:
-  - @Composable.
-  - remember y mutableStateOf.
-  - Scaffold.
+  - `@Composable`.
+  - `remember` y `mutableStateOf`.
+  - `Scaffold`.
   - Componentes **Material 3**.
 
 ### Navegación:
@@ -75,20 +78,18 @@ Incluye:
   - Pantalla de añadir producto.
 
 ### Gestión del estado:
-- La lista de productos se gestiona mediante mutableStateListOf.
+- La lista de productos se gestiona mediante `mutableStateListOf`.
 - La interfaz se recompone automáticamente al modificar el estado.
 - Filtros y contador se actualizan en tiempo real.
+- El estado de la Snackbar se gestiona de forma reactiva.
 
 ---
 
 ## Decisiones de diseño:
 - Uso de una paleta de colores **suaves y claros** para mejorar la experiencia visual.
 - Fondo con imagen y Scaffold transparente para dar sensación de profundidad.
-- Colores definidos en colors.xml para facilitar el mantenimiento.
+- Colores definidos en `colors.xml` para facilitar el mantenimiento.
 - Uso de **MaterialTheme** personalizado.
-- Interfaz sencilla y clara, priorizando la usabilidad.
+- Interfaz sencilla y clara, priorizando la usabilidad y el feedback inmediato.
 
 ---
-
-
-
